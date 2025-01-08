@@ -1,0 +1,68 @@
+/* 초기화 */
+body, html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  height: 100%;
+}
+
+/* 컨테이너  */
+.container {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 점수판 */
+.scoreboard {
+  background-color: #f4f4f4;
+  padding: 20px;
+  border-right: 2px solid #ccc;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.scoreboard h2 {
+  margin-top: 0;
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.score-row span {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.score-row i {
+  margin-right: 10px;
+  color: #555;
+}
+
+.score {
+  font-weight: bold;
+}
+
+
+/* 게임 화면 */
+.game-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #333;
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
