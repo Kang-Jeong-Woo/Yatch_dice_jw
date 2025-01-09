@@ -1,0 +1,15 @@
+# Blender MTL File: 'WoodenMug_render.blend'
+# Material Count: 1
+
+newmtl WoodenMug_MT
+Ns 179.999996
+Ka 1.000000 1.000000 1.000000
+Kd 0.500000 0.500000 0.500000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump D:\\cgtrader\\Wooden Mug 3D Model Files\\Blend\\WoodenMug_Normal.png
+map_Kd D:\\cgtrader\\Wooden Mug 3D Model Files\\Blend\\WoodenMug_BaseColor.png
+map_Ns D:\\cgtrader\\Wooden Mug 3D Model Files\\Blend\\WoodenMug_Roughness.png

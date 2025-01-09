@@ -5,53 +5,45 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 export class Dice {
     dynamicBodies: [THREE.Object3D, RAPIER.RigidBody][] = [];
-    faceValues: { [key: string]: number } = {};
+    faceValues: any = {};
+    // faceValues: { [key: string]: number } = {};
 
     constructor() {}
 
     async mkDice(scene: THREE.Scene, world: RAPIER.World, position: THREE.Vector3) {
-        const materials = await new MTLLoader().loadAsync('models/dice.mtl');
-        materials.preload(); // MTL 파일을 사전 로드
         const objLoader = new OBJLoader();
-        // 2. OBJLoader에 MTLLoader의 재질 설정 연결
+        const mtlLoader = new MTLLoader();
+        const materials = await mtlLoader.loadAsync('img/Dice.mtl');
+        materials.preload();
         objLoader.setMaterials(materials);
+        const object = await objLoader.loadAsync('models/Dice.obj');
+        scene.add(object);
+        const diceMesh = object.getObjectByName("g_Dice_Roundcube.001") as THREE.Mesh;
+        diceMesh.castShadow = true;
 
-        // await new OBJLoader().loadAsync('models/3.obj').then((object: THREE.Group) => {
-        await objLoader.loadAsync('models/Dice6.obj').then((object: THREE.Group) => {
-            console.log(object.children);
+        const diceBody = world.createRigidBody(
+            RAPIER.RigidBodyDesc.dynamic()
+                .setTranslation(position.x, position.y, position.z)
+                .setCanSleep(true)
+                .setLinearDamping(0.9)  // Increased linear damping
+                .setAngularDamping(0.9) // Increased angular damping
+        );
+        const points = new Float32Array(diceMesh.geometry.attributes.position.array);
+        const diceShape = (RAPIER.ColliderDesc.convexHull(points) as RAPIER.ColliderDesc)
+            .setMass(1)
+            .setRestitution(1.5)
+            .setFriction(1);
+        world.createCollider(diceShape, diceBody);
+        this.dynamicBodies.push([diceMesh, diceBody]);
 
-            scene.add(object);
-            // const diceMesh = object.getObjectByName('Cube_Cube.001') as THREE.Mesh;
-            const diceMesh = object.getObjectByName('g_Dice_Roundcube.001') as THREE.Mesh;
-            console.log(diceMesh.uuid);
-
-            diceMesh.material = new THREE.MeshNormalMaterial();
-            diceMesh.castShadow = true;
-
-            const diceBody = world.createRigidBody(
-                RAPIER.RigidBodyDesc.dynamic()
-                    .setTranslation(position.x, position.y, position.z)
-                    .setCanSleep(true)
-                    .setLinearDamping(0.9)  // Increased linear damping
-                    .setAngularDamping(0.9) // Increased angular damping
-            );
-            const points = new Float32Array(diceMesh.geometry.attributes.position.array);
-            const diceShape = (RAPIER.ColliderDesc.convexHull(points) as RAPIER.ColliderDesc)
-                .setMass(10000)
-                .setRestitution(0.1)
-                .setFriction(1.0);
-            world.createCollider(diceShape, diceBody);
-            this.dynamicBodies.push([diceMesh, diceBody]);
-
-            this.faceValues[diceMesh.uuid] = {
-                "+Y": 1,
-                "-Y": 6,
-                "+Z": 2,
-                "-Z": 5,
-                "+X": 3,
-                "-X": 4
-            };
-        });
+        this.faceValues[diceMesh.uuid] = {
+            "+Y": 1,
+            "-Y": 6,
+            "+Z": 2,
+            "-Z": 5,
+            "+X": 3,
+            "-X": 4
+        };
     }
 
     getDiceValue(mesh: THREE.Object3D): number | null {
@@ -89,8 +81,8 @@ export class Dice {
             mesh.quaternion.copy(body.rotation());
 
             if (body.isSleeping()) {
-                const value = this.getDiceValue(mesh);
-                console.log(`Dice value: ${value}`);
+                // const value = this.getDiceValue(mesh);
+                // console.log(`Dice value: ${value}`);
             }
         }
     }
