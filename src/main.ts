@@ -8,6 +8,7 @@ import RapierDebugRenderer from "./debugger/RapierDebugRenderer.ts";
 import {Cup2} from "./components/Cup2.ts";
 import {CupController} from "./components/CupController.ts";
 import {RGBELoader} from "three/addons/loaders/RGBELoader.js";
+import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls";
 
 await RAPIER.init()
 const gravity = new RAPIER.Vector3(0.0, -10, 0.0)
@@ -45,7 +46,7 @@ controls.enableDamping = true
 controls.addEventListener("change", () => cameraFolder.controllers.forEach((controller) => controller.updateDisplay()))
 
 // const controls = new PointerLockControls(camera, renderer.domElement)
-// controls.lock()
+// controls.lock() // <= 이렇게 바로 lock 을 하면 안 됨.
 // const menuPanel = document.getElementById('menuPanel') as HTMLDivElement
 // const startButton = document.getElementById('startButton') as HTMLButtonElement
 // startButton.addEventListener('click',() => {controls.lock()},false)
@@ -205,8 +206,11 @@ document.addEventListener('keydown', (event) => {
     if (event.code === 'Space') {
         // cup.pour(clock.getDelta(), 1, Math.PI / 2);
         cup.pour(5000, Math.PI / 2);
+
     }
 });
+
+// 다이스의 selected 를 바꿔주는 함수
 
 function animate() {
     requestAnimationFrame(animate)

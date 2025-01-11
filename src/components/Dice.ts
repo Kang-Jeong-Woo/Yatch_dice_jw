@@ -7,6 +7,8 @@ export class Dice {
     dynamicBodies: [THREE.Object3D, RAPIER.RigidBody][] = [];
     faceValues: any = {};
     // faceValues: { [key: string]: number } = {};
+    isSelected: boolean = false;
+    isSleep: boolean = false;
 
     constructor() {}
 
@@ -81,9 +83,22 @@ export class Dice {
             mesh.quaternion.copy(body.rotation());
 
             if (body.isSleeping()) {
+                this.isSleep = true;
                 // const value = this.getDiceValue(mesh);
                 // console.log(`Dice value: ${value}`);
             }
         }
     }
+
+    select() {
+        this.isSelected = true;
+    }
+
+    disSelect() {
+        this.isSelected = false;
+        // sleep 이 해제됨.
+        //
+    }
+
+
 }
