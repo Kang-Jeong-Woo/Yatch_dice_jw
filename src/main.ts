@@ -6,14 +6,12 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import {Dice} from "./components/Dice.ts";
 import RapierDebugRenderer from "./debugger/RapierDebugRenderer.ts";
 import {Cup2} from "./components/Cup2.ts";
-import {CupController} from "./components/CupController.ts";
 import {RGBELoader} from "three/addons/loaders/RGBELoader.js";
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls";
 
 await RAPIER.init()
 const gravity = new RAPIER.Vector3(0.0, -10, 0.0)
 const world = new RAPIER.World(gravity)
-// const dynamicBodies: [THREE.Object3D, RAPIER.RigidBody][] = []
 
 let gameFlag: boolean = false;
 const pickables: THREE.Mesh[] = []
@@ -135,13 +133,12 @@ for (let i = 0; i < 5; i++) {
 
 // 모든 주사위가 sleep 상태인지 확인하는 함수
 function areAllDiceAsleep(diceArray: Dice[]): boolean {
-    // return diceArray.every(dice => dice.dynamicBodies.every(([_, body]) => body.isSleeping()));
-    return diceArray.every(dice => dice.id === true);
+    return diceArray.every(dice => !dice.isSelected && dice.isSleep);
 }
 
 const cup = new Cup2();
+await cup.mkCup(scene, world, new THREE.Vector3(height[0], height[1]-1, height[2]));
 // const cupCon = new CupController(cup, camera, scene);
-await cup.mkCup(scene, world, new THREE.Vector3(height[0], height[1], height[2]));
 
 const rapierDebugRenderer = new RapierDebugRenderer(scene, world)
 
@@ -197,53 +194,38 @@ physicsFolder.add(world.gravity, 'x', -10.0, 10.0, 0.1)
 physicsFolder.add(world.gravity, 'y', -10.0, 10.0, 0.1)
 physicsFolder.add(world.gravity, 'z', -10.0, 10.0, 0.1)
 
-const clock = new THREE.Clock()
-let delta
+// 라운드 시작
+const roundStart = () => {
+    gameFlag = false
+    for (const dice of diceArray) {
+        let i = 0;
+        // diceAry 의 isSelected 를 제외한 나머지 값들을 cup 위치에 이동
+        if(!dice.isSelected) {
+            const rigidBody = dice.dynamicBodies[1];
+            rigidBody.setTranslation(
+                { x: height[0], y: height[1] + i * 2, z: height[2] },
+                true
+            );
+            dice.originalPosition = null;
+        }
+    }
+}
 
-// HTML에서 버튼 가져오기
-const shakeButton = document.querySelector('#shake-button') as HTMLButtonElement;
+// HTML에서 라운드 시작 버튼 가져오기
+const roundStartBtn = document.querySelector('#round-start') as HTMLButtonElement;
+roundStartBtn.addEventListener('click', (e) => {roundStart()})
 
 // 버튼 이벤트 리스너
 // shakeButton.addEventListener('click', cup.pour(clock.getDelta(), 1000));
 
-document.addEventListener('keydown', async (event) => {
+let round = 0;
+
+// 게임 시작
+document.addEventListener('keydown', (event) => {
     if (event.code === 'Space' && !gameFlag) {
         gameFlag = true;
-
-        // 컵 기울이기
-        // cup.pour(clock.getDelta(), 1, Math.PI / 2);
-        await cup.pour(5000, Math.PI / 2);
-
-        // 모든 주사위가 sleep 상태인지 확인
-        // if (areAllDiceAsleep(diceArray)) {
-        if (false) {
-            const scoreAry: Array<number> = [];
-            for (const dice of diceArray) {
-                scoreAry.push(dice.getDiceValueClone(dice.id));
-            }
-            console.log("All dice are asleep. Values: ", scoreAry);
-
-            // 사용자 입력 대기 (주사위 클릭으로 선택) => raycaster 로 동작할 수 있도록 수정.
-            // scene.addEventListener('click', (event) => {
-            //     const selectedDice = getClickedDice(event, diceArray); // 클릭한 주사위를 반환하는 함수
-            //     if (selectedDice) {
-            //         selectedDice.select();
-            //         console.log(`Selected dice value: ${selectedDice.getDiceValue(selectedDice.dynamicBodies[0][0])}`);
-            //     }
-            // });
-
-            // 다시 컵 기울이기
-            // await cup.pour(5000, Math.PI / 2);
-
-            // 선택되지 않은 주사위만 다시 굴림
-            // diceArray.forEach(dice => {
-            //     if (!dice.isSelected) {
-            //         dice.resetPhysics(world);
-            //     }
-            // });
-        }
-
-        // gameFlag = false;
+        cup.pour(5000, Math.PI / 2);
+        round++;
     }
 });
 
@@ -252,162 +234,95 @@ const raycaster = new THREE.Raycaster()
 
 const mouse = new THREE.Vector2()
 
-// 전체 scene의 객체들과 교차 검사
-const allObjects = []
-scene.traverse(object => {
-    if (object instanceof THREE.Mesh) {
-        allObjects.push(object)
-    }
-})
-
 // scene의 모든 주사위 메시를 가져옴
 const diceObjects = diceArray.map(dice => dice.dynamicBodies[0])
 
-const arrowHelper = new THREE.ArrowHelper()
-arrowHelper.setLength(0.5)
+const scoreMap: Map<number, number> = new Map<number, number>();
+const originalPositionMap: Map<number, THREE.Vector3> = new Map<number, THREE.Vector3>();
 
-renderer.domElement.addEventListener('mousemove', (e) => {
-    // 'mousemove' 이벤트에 맞춰서 캔버스에 마우스 위치 입력
-    mouse.set((e.clientX / renderer.domElement.clientWidth) * 2 - 1, -(e.clientY / renderer.domElement.clientHeight) * 2 + 1)
-
-    // 새로운 마우스 위치와 방향으로 Ray를 업데이트
-    raycaster.setFromCamera(mouse, camera)
-
-    const intersects = raycaster.intersectObjects(allObjects);
-    // const intersects = raycaster.intersectObjects(diceObjects);
-
-    if (intersects.length) {
-        const n = new THREE.Vector3()
-        n.copy((intersects[0].face as THREE.Face).normal)
-        n.transformDirection(intersects[0].object.matrixWorld)
-
-        arrowHelper.setDirection(n)
-        arrowHelper.position.copy(intersects[0].point)
-    }
-})
-
+// 선택된 주사위들을 위한 위치 계산 함수
+const getSelectedDicePosition = (index: number): THREE.Vector3 => {
+    // score map 의 size 를 사용해서 -15 부터 x 좌표를 주사위 개수에 따라 균등하게 분배
+    // const x = -10 + (20 * (index / (diceArray.length - 1)));
+    const x = -15 + (5 * scoreMap.size);
+    return new THREE.Vector3(x, 0.001, -20);
+}
 
 renderer.domElement.addEventListener('dblclick', (e) => {
-    // canvas의 경계 정보를 가져옴
-    const rect = renderer.domElement.getBoundingClientRect();
+    console.log("더블 클릭 이벤트: ",gameFlag);
+    if (gameFlag) {
+        console.log("더블 클릭!")
+        // canvas의 경계 정보를 가져옴
+        const rect = renderer.domElement.getBoundingClientRect();
 
-    // 마우스 좌표를 canvas 기준으로 변환
-    mouse.set(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1
-    );
+        // 마우스 좌표를 canvas 기준으로 변환
+        mouse.set(
+            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            -((e.clientY - rect.top) / rect.height) * 2 + 1
+        );
 
-    // mouse.set((e.clientX / renderer.domElement.clientWidth) * 2 - 1, -(e.clientY / renderer.domElement.clientHeight) * 2 + 1)
+        raycaster.setFromCamera(mouse, camera)
 
-    raycaster.setFromCamera(mouse, camera)
+        const intersects = raycaster.intersectObjects(diceObjects, true)
+        if (intersects.length > 0) {
+            const clickedMeshUuid = intersects[0].object.uuid
 
-    console.log('Total meshes in scene:', allObjects)
-    console.log('Total meshes in scene:', diceObjects)
-    const intersects = raycaster.intersectObjects(diceObjects, true)
-    console.log('Intersected objects:', intersects)
+            // UUID에 해당하는 Dice 객체 찾기
+            const clickedDice = diceArray.find(dice => dice.dynamicBodies[0].uuid === clickedMeshUuid)
 
-    if (intersects.length > 0) {
-        const clickedMeshUuid = intersects[0].object.uuid
+            if (clickedDice) {
+                if (clickedDice.isSelected) {
+                    clickedDice.isSelected = false;
+                    scoreMap.delete(clickedDice.id);
 
-        // UUID에 해당하는 Dice 객체를 찾음
-        const clickedDice = diceArray.find(dice => dice.dynamicBodies[0].uuid === clickedMeshUuid)
+                    // 원래 위치
+                    const rigidBody = clickedDice.dynamicBodies[1];
+                    rigidBody.setTranslation(
+                        { x: clickedDice.originalPosition!.x, y: clickedDice.originalPosition!.y, z: clickedDice.originalPosition!.z },
+                        true
+                    );
+                    // 움직임 멈추기
+                    rigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+                    rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                } else {
+                    // 새로 선택된 주사위
+                    const value = clickedDice.getDiceValue();
+                    scoreMap.set(clickedDice.id, value);
+                    clickedDice.isSelected = true;
 
-        if (clickedDice) {
-            // getDiceValue 함수 호출
-            const value = clickedDice.getDiceValueClone(clickedDice.id)
-            console.log('Clicked dice value:', value)
+                    // 선택된 주사위의 현재 index
+                    const selectedCount = Array.from(scoreMap.keys()).sort().indexOf(clickedDice.id);
+                    const targetPosition = getSelectedDicePosition(selectedCount);
+
+                    // 주사위 물리 바디 위치 업데이트
+                    const rigidBody = clickedDice.dynamicBodies[1];
+                    rigidBody.setTranslation(
+                        { x: targetPosition.x, y: targetPosition.y, z: targetPosition.z },
+                        true
+                    );
+                    // 움직임 멈추기
+                    rigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+                    rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                }
+            }
         }
     }
-
-
-
-
-
-
-
-    // // ray와 교차하는 객체들을 찾음
-    // const intersects = raycaster.intersectObjects(diceObjects)
-    //
-    // if (intersects.length > 0) {
-    //     // 첫 번째로 교차된 객체의 UUID를 가져옴
-    //     const clickedMeshUuid = intersects[0].object.uuid
-    //
-    //     // UUID에 해당하는 Dice 객체를 찾음
-    //     const clickedDice = diceArray.find(dice => dice.dynamicBodies[0].uuid === clickedMeshUuid)
-    //
-    //     if (clickedDice) {
-    //         // getDiceValue 함수 호출
-    //         const value = clickedDice.getDiceValueClone(clickedDice.id)
-    //         console.log('Clicked dice value:', value)
-    //     }
-    // }
-
-
-
-
-
-
-
-
-
-
-    // raycaster.intersectObject(diceArray, false);
-    // const intersects = raycaster.intersectObjects(pickables, false)
-    //
-    // if (intersects.length) {
-    //     console.log("클릭된 객체", intersects);
-    // }
-
-    // 주사위 배열에서 교차된 객체 검색
-    // const intersects = raycaster.intersectObjects(diceArray.map(state => state.dynamicBodies[0]));
-
-    // const intersects = raycaster.intersectObjects(pickables);
-    //
-    // console.log("the fuck...? : ",pickables)
-    // console.log(intersects)
-    //
-    // if (intersects.length > 0) {
-    //     const clickedMesh = intersects[0].object; // 가장 가까운 교차 객체
-    //     const clickedDice = diceArray.find(state => state.dynamicBodies[0] === clickedMesh);
-    //
-    //     if (clickedDice) {
-    //         console.log("Clicked dice:", clickedDice);
-    //     }
-    // }
-
-    // const intersects = raycaster.intersectObjects(scene.children, true);
-    //
-    // if (intersects.length > 0) {
-    //     const clickedObject = intersects[0].object;
-    //     const clickedDice = diceArray.find(state => state.dynamicBodies[0] === clickedObject);
-    //
-    //     if (clickedDice) {
-    //         console.log("Clicked dice:", clickedDice);
-    //     }
-    // }
 })
+
+const clock = new THREE.Clock()
+let delta
 
 function animate() {
     requestAnimationFrame(animate)
 
-    delta = clock.getDelta()
+    delta = clock.getDelta() * 2;
     world.timestep = Math.min(delta, 0.1)
     world.step()
-
-    // for (let i = 0, n = dynamicBodies.length; i < n; i++) {
-    //     dynamicBodies[i][0].position.copy(dynamicBodies[i][1].translation())
-    //     dynamicBodies[i][0].quaternion.copy(dynamicBodies[i][1].rotation())
-    // }
 
     for (const dice of diceArray) {
         dice.update();
     }
 
-    // dice1.update();
-    // dice2.update();
-    // dice3.update();
-    // dice4.update();
-    // dice5.update();
     cup.update();
 
     // cupCon.update(delta);
@@ -416,57 +331,6 @@ function animate() {
     controls.update()
     renderer.render(scene, camera)
     stats.update()
-
-    // if (diceArray.every(state => state.isSleep) && gameFlag) {
-    //     gameFlag = false;
-    //     const scoreAry: Array<number> = [];
-    //     for (const dice of diceArray) {
-    //         scoreAry.push(dice.getDiceValueClone(dice.id));
-    //     }
-    // }
-
-    // 사용자 입력 대기 (주사위 클릭으로 선택) => raycaster 로 동작할 수 있도록 수정.
-    // scene.addEventListener('click', (event) => {
-    //     const selectedDice = getClickedDice(event, diceArray); // 클릭한 주사위를 반환하는 함수
-    //     if (selectedDice) {
-    //         selectedDice.select();
-    //         console.log(`Selected dice value: ${selectedDice.getDiceValue(selectedDice.dynamicBodies[0][0])}`);
-    //     }
-    // });
-
-    // 선택되지 않은 주사위만 다시 굴림
-    // diceArray.forEach(dice => {
-    //     if (!dice.isSelected) {
-    //         dice.resetPhysics(world);
-    //     }
-    // });
 }
 
 animate()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

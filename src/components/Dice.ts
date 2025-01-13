@@ -2,7 +2,6 @@ import * as THREE from "three";
 import RAPIER from '@dimforge/rapier3d-compat';
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
-import {Object3D} from "three";
 
 export class Dice {
     id: number = -1;
@@ -11,6 +10,7 @@ export class Dice {
     // faceValues: { [key: string]: number } = {};
     isSelected: boolean = false;
     isSleep: boolean = false;
+    originalPosition: THREE.Vector3 | null = null;
 
     constructor() {}
 
@@ -51,33 +51,7 @@ export class Dice {
         };
     }
 
-    getDiceValue(mesh: THREE.Object3D): number | null {
-        const upDirections = {
-            "+Y": new THREE.Vector3(0, 1, 0),
-            "-Y": new THREE.Vector3(0, -1, 0),
-            "+Z": new THREE.Vector3(0, 0, 1),
-            "-Z": new THREE.Vector3(0, 0, -1),
-            "+X": new THREE.Vector3(1, 0, 0),
-            "-X": new THREE.Vector3(-1, 0, 0),
-        };
-
-        const currentQuaternion = mesh.quaternion.clone();
-        let closestFace = null;
-        let maxDot = -Infinity;
-
-        for (const [face, direction] of Object.entries(upDirections)) {
-            const transformedDirection = direction.clone().applyQuaternion(currentQuaternion);
-            const dot = transformedDirection.dot(new THREE.Vector3(0, 1, 0)); // Compare with world +Y
-            if (dot > maxDot) {
-                maxDot = dot;
-                closestFace = face;
-            }
-        }
-
-        return closestFace ? this.faceValues[mesh.uuid][closestFace] : null;
-    }
-
-    getDiceValueClone(id:number): number {
+    getDiceValue(): number {
         const upDirections = {
             "+Y": new THREE.Vector3(0, 1, 0),
             "-Y": new THREE.Vector3(0, -1, 0),
@@ -104,41 +78,33 @@ export class Dice {
     }
 
     update() {
-        // for (let i = 0, n = this.dynamicBodies.length; i < n; i++) {
-            const mesh = this.dynamicBodies[0];
-            const body = this.dynamicBodies[1];
+        const mesh = this.dynamicBodies[0];
+        const body = this.dynamicBodies[1];
 
-            mesh.position.copy(body.translation());
-            mesh.quaternion.copy(body.rotation());
+        mesh.position.copy(body.translation());
+        mesh.quaternion.copy(body.rotation());
 
-            if (body.isSleeping()) {
+        if (body.isSleeping()) {
+            if (!this.isSleep) {
                 this.isSleep = true;
-                // 여기서 특정 함수 실행
-
-                // const value = this.getDiceValue(mesh);
-                // console.log(`Dice value: ${value}`);
+                this.setOriginalPosition();
             }
-        // }
+        }
     }
 
-    select() {
-        this.isSelected = true;
-    }
-
-    disSelect() {
-        this.isSelected = false;
-        // sleep 이 해제됨.
-        //
+    setOriginalPosition() {
+        if (!this.originalPosition && this.isSleep) {
+            const currentPos = this.dynamicBodies[1].translation();
+            this.originalPosition = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
+        }
     }
 
     resetPhysics(world: RAPIER.World) {
-        for (const [_, value] of this.dynamicBodies) {
-            if (!this.isSelected) {
-                value[1].wakeUp(); // isSelected가 아닌 주사위를 다시 활성화
-                value[1].setTranslation({ x: 0, y: 5, z: 0 }, true); // 초기 위치로 설정
-                value[1].setLinvel({ x: Math.random(), y: Math.random(), z: Math.random() }, true);
-                value[1].setAngvel({ x: Math.random(), y: Math.random(), z: Math.random() }, true);
-            }
+        if (!this.isSelected) {
+            this.dynamicBodies[1].wakeUp(); // isSelected가 아닌 주사위를 다시 활성화
+            this.dynamicBodies[1].setTranslation({ x: 0, y: 5, z: 0 }, true); // 초기 위치로 설정
+            this.dynamicBodies[1].setLinvel({ x: Math.random(), y: Math.random(), z: Math.random() }, true);
+            this.dynamicBodies[1].setAngvel({ x: Math.random(), y: Math.random(), z: Math.random() }, true);
         }
     }
 }

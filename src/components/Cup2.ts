@@ -81,6 +81,78 @@ export class Cup2 implements CupObject{
         }
     }
 
+    // public pour(duration: number, targetTiltAngle: number) {
+    //     if (this.isPouring || !this.mesh || !this.body) return;
+    //
+    //     this.isPouring = true;
+    //     const startTime = Date.now();
+    //     const liftHeight = 0.5;
+    //     const initialPosition = this.body.translation();
+    //     const initialRotation = this.body.rotation();
+    //
+    //     // dynamicBodies 배열에서 현재 컵의 인덱스 찾기
+    //     const cupIndex = this.dynamicBodies.findIndex(([mesh, _]) => mesh === this.mesh);
+    //     if (cupIndex === -1) {
+    //         console.error('Cup not found in dynamicBodies array');
+    //         return;
+    //     }
+    //
+    //     const tiltAngleRad = (Math.min(targetTiltAngle, 60) * Math.PI) / 180;
+    //
+    //     const animate = () => {
+    //         const elapsed = Date.now() - startTime;
+    //         const progress = Math.min(elapsed / duration, 1);
+    //
+    //         if (progress >= 1) {
+    //             this.isPouring = false;
+    //             return;
+    //         }
+    //
+    //         const easeProgress = -(Math.cos(Math.PI * progress) - 1) / 2;
+    //
+    //         const currentLift = liftHeight * easeProgress * 50;
+    //         const forwardMove = 0.3 * easeProgress;
+    //
+    //         // 위치 업데이트
+    //         const newPosition = {
+    //             x: initialPosition.x + forwardMove,
+    //             y: initialPosition.y + currentLift,
+    //             z: initialPosition.z
+    //         };
+    //         this.body.setTranslation(newPosition, true);
+    //
+    //         // 회전 업데이트
+    //         const currentTilt = tiltAngleRad * easeProgress * 90;
+    //         const tiltQuat = new THREE.Quaternion().setFromAxisAngle(
+    //             new THREE.Vector3(0, 0, 1),
+    //             currentTilt
+    //         );
+    //
+    //         const newRot = new THREE.Quaternion(
+    //             initialRotation.x,
+    //             initialRotation.y,
+    //             initialRotation.z,
+    //             initialRotation.w
+    //         ).multiply(tiltQuat);
+    //
+    //         this.body.setRotation(
+    //             { x: newRot.x, y: newRot.y, z: newRot.z, w: newRot.w },
+    //             true
+    //         );
+    //
+    //         // Three.js 메시 업데이트
+    //         this.mesh.position.copy(this.body.translation());
+    //         this.mesh.quaternion.copy(this.body.rotation());
+    //
+    //         // dynamicBodies 배열 업데이트
+    //         this.dynamicBodies[cupIndex] = [this.mesh, this.body];
+    //
+    //         requestAnimationFrame(animate);
+    //     };
+    //
+    //     animate();
+    // }
+
     public pour(duration: number, targetTiltAngle: number) {
         if (this.isPouring || !this.mesh || !this.body) return;
 
@@ -90,7 +162,6 @@ export class Cup2 implements CupObject{
         const initialPosition = this.body.translation();
         const initialRotation = this.body.rotation();
 
-        // dynamicBodies 배열에서 현재 컵의 인덱스 찾기
         const cupIndex = this.dynamicBodies.findIndex(([mesh, _]) => mesh === this.mesh);
         if (cupIndex === -1) {
             console.error('Cup not found in dynamicBodies array');
@@ -99,12 +170,65 @@ export class Cup2 implements CupObject{
 
         const tiltAngleRad = (Math.min(targetTiltAngle, 60) * Math.PI) / 180;
 
+        // 원래 위치로 돌아오는 애니메이션 함수
+        const returnToInitial = () => {
+            const returnStartTime = Date.now();
+            const returnDuration = 1000;
+
+            const returnAnimate = () => {
+                const elapsed = Date.now() - returnStartTime;
+                const progress = Math.min(elapsed / returnDuration, 1);
+
+                if (progress >= 1) {
+                    this.isPouring = false;
+                    return;
+                }
+
+                const easeProgress = -(Math.cos(Math.PI * progress) - 1) / 2;
+                const inverseProgress = 1 - easeProgress;
+
+                // 현재 위치에서 초기 위치로 보간
+                const currentPos = this.body.translation();
+                const newPosition = {
+                    x: currentPos.x + (initialPosition.x - currentPos.x) * easeProgress,
+                    y: currentPos.y + (initialPosition.y - currentPos.y) * easeProgress,
+                    z: currentPos.z + (initialPosition.z - currentPos.z) * easeProgress
+                };
+                this.body.setTranslation(newPosition, true);
+
+                // 현재 회전에서 초기 회전으로 보간
+                const currentRot = this.body.rotation();
+                const currentQuat = new THREE.Quaternion(currentRot.x, currentRot.y, currentRot.z, currentRot.w);
+                const initialQuat = new THREE.Quaternion(initialRotation.x, initialRotation.y, initialRotation.z, initialRotation.w);
+                currentQuat.slerp(initialQuat, easeProgress);
+
+                this.body.setRotation(
+                    { x: currentQuat.x, y: currentQuat.y, z: currentQuat.z, w: currentQuat.w },
+                    true
+                );
+
+                // Three.js 메시 업데이트
+                this.mesh.position.copy(this.body.translation());
+                this.mesh.quaternion.copy(this.body.rotation());
+
+                // dynamicBodies 배열 업데이트
+                this.dynamicBodies[cupIndex] = [this.mesh, this.body];
+
+                if (progress < 1) {
+                    requestAnimationFrame(returnAnimate);
+                }
+            };
+
+            returnAnimate();
+        };
+
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
 
             if (progress >= 1) {
-                this.isPouring = false;
+                // 2초 후에 원래 위치로 돌아가기 시작
+                setTimeout(returnToInitial, 2000);
                 return;
             }
 
