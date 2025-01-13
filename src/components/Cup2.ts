@@ -29,10 +29,6 @@ export class Cup2 implements CupObject{
         });
         cupMesh.castShadow = true;
 
-        console.log(object);
-        console.log(cupMesh);
-        // console.log(materials);
-
         const geometry = cupMesh.geometry;
 
         let vertices: Float32Array;

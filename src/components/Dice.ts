@@ -2,9 +2,11 @@ import * as THREE from "three";
 import RAPIER from '@dimforge/rapier3d-compat';
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+import {Object3D} from "three";
 
 export class Dice {
-    dynamicBodies: [THREE.Object3D, RAPIER.RigidBody][] = [];
+    id: number = -1;
+    dynamicBodies: [THREE.Mesh, RAPIER.RigidBody] = [];
     faceValues: any = {};
     // faceValues: { [key: string]: number } = {};
     isSelected: boolean = false;
@@ -12,7 +14,7 @@ export class Dice {
 
     constructor() {}
 
-    async mkDice(scene: THREE.Scene, world: RAPIER.World, position: THREE.Vector3) {
+    async mkDice(id: number, scene: THREE.Scene, world: RAPIER.World, position: THREE.Vector3) {
         const objLoader = new OBJLoader();
         const mtlLoader = new MTLLoader();
         const materials = await mtlLoader.loadAsync('img/Dice.mtl');
@@ -36,7 +38,8 @@ export class Dice {
             .setRestitution(1.5)
             .setFriction(1);
         world.createCollider(diceShape, diceBody);
-        this.dynamicBodies.push([diceMesh, diceBody]);
+        this.dynamicBodies = [diceMesh, diceBody];
+        this.id = id;
 
         this.faceValues[diceMesh.uuid] = {
             "+Y": 1,
@@ -74,20 +77,48 @@ export class Dice {
         return closestFace ? this.faceValues[mesh.uuid][closestFace] : null;
     }
 
+    getDiceValueClone(id:number): number {
+        const upDirections = {
+            "+Y": new THREE.Vector3(0, 1, 0),
+            "-Y": new THREE.Vector3(0, -1, 0),
+            "+Z": new THREE.Vector3(0, 0, 1),
+            "-Z": new THREE.Vector3(0, 0, -1),
+            "+X": new THREE.Vector3(1, 0, 0),
+            "-X": new THREE.Vector3(-1, 0, 0),
+        };
+
+        const currentQuaternion = this.dynamicBodies[0].quaternion.clone();
+        let closestFace = null;
+        let maxDot = -Infinity;
+
+        for (const [face, direction] of Object.entries(upDirections)) {
+            const transformedDirection = direction.clone().applyQuaternion(currentQuaternion);
+            const dot = transformedDirection.dot(new THREE.Vector3(0, 1, 0)); // Compare with world +Y
+            if (dot > maxDot) {
+                maxDot = dot;
+                closestFace = face;
+            }
+        }
+
+        return closestFace ? this.faceValues[this.dynamicBodies[0].uuid][closestFace] : 100;
+    }
+
     update() {
-        for (let i = 0, n = this.dynamicBodies.length; i < n; i++) {
-            const mesh = this.dynamicBodies[i][0];
-            const body = this.dynamicBodies[i][1];
+        // for (let i = 0, n = this.dynamicBodies.length; i < n; i++) {
+            const mesh = this.dynamicBodies[0];
+            const body = this.dynamicBodies[1];
 
             mesh.position.copy(body.translation());
             mesh.quaternion.copy(body.rotation());
 
             if (body.isSleeping()) {
                 this.isSleep = true;
+                // 여기서 특정 함수 실행
+
                 // const value = this.getDiceValue(mesh);
                 // console.log(`Dice value: ${value}`);
             }
-        }
+        // }
     }
 
     select() {
@@ -100,5 +131,14 @@ export class Dice {
         //
     }
 
-
+    resetPhysics(world: RAPIER.World) {
+        for (const [_, value] of this.dynamicBodies) {
+            if (!this.isSelected) {
+                value[1].wakeUp(); // isSelected가 아닌 주사위를 다시 활성화
+                value[1].setTranslation({ x: 0, y: 5, z: 0 }, true); // 초기 위치로 설정
+                value[1].setLinvel({ x: Math.random(), y: Math.random(), z: Math.random() }, true);
+                value[1].setAngvel({ x: Math.random(), y: Math.random(), z: Math.random() }, true);
+            }
+        }
+    }
 }
