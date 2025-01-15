@@ -5,14 +5,17 @@ body, html {
   box-sizing: border-box;
   font-family: Arial, sans-serif;
   height: 100%;
+  color: #333; /* 기본 글자 색상 */
+  background-color: #f9f9f9; /* 기본 배경 색상 */
 }
 
-/* 컨테이너  */
+/* 컨테이너 */
 .container {
   display: grid;
   grid-template-columns: 300px 1fr;
   height: 100vh;
   overflow: hidden;
+  background-color: #ffffff;
 }
 
 /* 점수판 */
@@ -21,12 +24,14 @@ body, html {
   padding: 20px;
   border-right: 2px solid #ccc;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
 }
 
 .scoreboard h2 {
   margin-top: 0;
   text-align: center;
   font-size: 1.5rem;
+  color: #222;
 }
 
 .score-row {
@@ -35,6 +40,11 @@ body, html {
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid #ddd;
+  transition: background-color 0.3s;
+}
+
+.score-row:hover {
+  background-color: #eaeaea; /* 마우스 오버 효과 */
 }
 
 .score-row span {
@@ -50,6 +60,7 @@ body, html {
 
 .score {
   font-weight: bold;
+  color: #444;
 }
 
 /* 게임 화면 */
@@ -58,19 +69,42 @@ body, html {
   justify-content: center;
   align-items: center;
   background-color: #333;
+  position: relative;
 }
 
 #gameCanvas {
   width: 100%;
   height: 100%;
   display: block;
+  border: 1px solid #222; /* 캔버스 경계 */
+}
+
+.highlight {
+  background-color: #ffeb3b; /* 강조 효과 */
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.possible-score {
+  background-color: rgba(255, 255, 0, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+.possible-score:hover {
+  background-color: rgba(255, 255, 0, 0.4);
+  cursor: pointer;
+}
+
+.scored {
+  background-color: #e0e0e0;
+  pointer-events: none;
 }
 
 /* 버튼 */
 :root {
   --button-color: #ffffff;
-  --button-bg-color: #0d6efd;
-  --button-hover-bg-color: #025ce2;
+  --button-bg-color: #dc3545;
+  --button-hover-bg-color: #c82333;
 }
 
 button {
@@ -101,11 +135,6 @@ button {
   cursor: pointer;
 
   transition: 0.5s;
-}
-
-button.error {
-  --button-bg-color: #dc3545;
-  --button-hover-bg-color: #c82333;
 }
 
 button:active,

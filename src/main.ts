@@ -206,7 +206,7 @@ const roundStart = () => {
                 { x: height[0], y: height[1] + i * 2, z: height[2] },
                 true
             );
-            dice.originalPosition = null;
+            // dice.originalPosition = null;
         }
     }
 }
@@ -224,7 +224,7 @@ let round = 0;
 document.addEventListener('keydown', (event) => {
     if (event.code === 'Space' && !gameFlag) {
         gameFlag = true;
-        cup.pour(5000, Math.PI / 2);
+        cup.pour(5000, Math.PI / 2, () => gameFlag = true);
         round++;
     }
 });
@@ -243,15 +243,12 @@ const originalPositionMap: Map<number, THREE.Vector3> = new Map<number, THREE.Ve
 // 선택된 주사위들을 위한 위치 계산 함수
 const getSelectedDicePosition = (index: number): THREE.Vector3 => {
     // score map 의 size 를 사용해서 -15 부터 x 좌표를 주사위 개수에 따라 균등하게 분배
-    // const x = -10 + (20 * (index / (diceArray.length - 1)));
-    const x = -15 + (5 * scoreMap.size);
+    const x = -15 + (5 * index);
     return new THREE.Vector3(x, 0.001, -20);
 }
 
 renderer.domElement.addEventListener('dblclick', (e) => {
-    console.log("더블 클릭 이벤트: ",gameFlag);
     if (gameFlag) {
-        console.log("더블 클릭!")
         // canvas의 경계 정보를 가져옴
         const rect = renderer.domElement.getBoundingClientRect();
 
@@ -284,6 +281,21 @@ renderer.domElement.addEventListener('dblclick', (e) => {
                     // 움직임 멈추기
                     rigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
                     rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+
+                    // 남아있는 주사위들의 위치 재정렬
+                    Array.from(scoreMap.keys()).forEach((id, index) => {
+                        const dice = diceArray.find(d => d.id === id);
+                        if (dice) {
+                            const newPosition = getSelectedDicePosition(index);
+                            const diceRigidBody = dice.dynamicBodies[1];
+                            diceRigidBody.setTranslation(
+                                { x: newPosition.x, y: newPosition.y, z: newPosition.z },
+                                true
+                            );
+                            diceRigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+                            diceRigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                        }
+                    });
                 } else {
                     // 새로 선택된 주사위
                     const value = clickedDice.getDiceValue();
@@ -291,8 +303,8 @@ renderer.domElement.addEventListener('dblclick', (e) => {
                     clickedDice.isSelected = true;
 
                     // 선택된 주사위의 현재 index
-                    const selectedCount = Array.from(scoreMap.keys()).sort().indexOf(clickedDice.id);
-                    const targetPosition = getSelectedDicePosition(selectedCount);
+                    const targetPosition = getSelectedDicePosition(scoreMap.size);
+                    clickedDice.setOriginalPosition();
 
                     // 주사위 물리 바디 위치 업데이트
                     const rigidBody = clickedDice.dynamicBodies[1];
@@ -308,6 +320,73 @@ renderer.domElement.addEventListener('dblclick', (e) => {
         }
     }
 })
+
+// 점수 계산 함수들
+const calculateSum = (numbers: number[]) => numbers.reduce((a, b) => a + b, 0);
+
+const countNumbers = (numbers: number[], target: number) =>
+    numbers.filter(n => n === target).length;
+
+function scoreUpdate() {
+    // 모든 주사위가 sleep 상태인지 확인
+    const allDicesSleep = diceArray.every(dice => dice.isSleep);
+
+    if (!allDicesSleep || !gameFlag) return;
+
+    // 현재 선택된 주사위들의 값을 배열로 변환
+    const selectedValues = Array.from(scoreMap.values());
+
+    if (selectedValues.length === 0) return;
+
+    // 가능한 점수 조합 계산
+    const possibleScores = {
+        ones: selectedValues.filter(v => v === 1).reduce((a, b) => a + b, 0),
+        twos: selectedValues.filter(v => v === 2).reduce((a, b) => a + b, 0),
+        threes: selectedValues.filter(v => v === 3).reduce((a, b) => a + b, 0),
+        fours: selectedValues.filter(v => v === 4).reduce((a, b) => a + b, 0),
+        fives: selectedValues.filter(v => v === 5).reduce((a, b) => a + b, 0),
+        sixes: selectedValues.filter(v => v === 6).reduce((a, b) => a + b, 0),
+        chance: calculateSum(selectedValues),
+        fourOfAKind: Array.from({ length: 6 }, (_, i) => i + 1)
+            .some(num => countNumbers(selectedValues, num) >= 4) ? calculateSum(selectedValues) : 0,
+        fullHouse: (() => {
+            const counts = new Map<number, number>();
+            selectedValues.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+            const hasThree = Array.from(counts.values()).some(count => count === 3);
+            const hasTwo = Array.from(counts.values()).some(count => count === 2);
+            return (hasThree && hasTwo) ? 25 : 0;
+        })(),
+        smallStraight: (() => {
+            const unique = [...new Set(selectedValues)].sort();
+            for (let i = 0; i <= unique.length - 4; i++) {
+                if (unique[i + 3] - unique[i] === 3) return 30;
+            }
+            return 0;
+        })(),
+        largeStraight: (() => {
+            const unique = [...new Set(selectedValues)].sort();
+            return unique.length === 5 && unique[4] - unique[0] === 4 ? 40 : 0;
+        })(),
+        yacht: selectedValues.every(v => selectedValues.length === 6 && v === selectedValues[0]) ? 50 : 0
+    };
+
+    // HTML 요소 업데이트 및 하이라이트 효과
+    Object.entries(possibleScores).forEach(([scoreType, score]) => {
+        console.log("scoreType: ", scoreType,", score: ", score)
+        const element = document.getElementById(`${scoreType}`);
+        if (element && score > 0) {
+            element.textContent = score.toString();
+            element.classList.add('possible-score');
+        }
+        // if (element && score > 0) {
+        //     // 이미 점수가 기록되지 않은 칸에만 표시
+        //     if (!element.classList.contains('scored')) {
+        //         element.textContent = score.toString();
+        //         element.classList.add('possible-score');
+        //     }
+        // }
+    });
+}
 
 const clock = new THREE.Clock()
 let delta
@@ -331,6 +410,13 @@ function animate() {
     controls.update()
     renderer.render(scene, camera)
     stats.update()
+
+    scoreUpdate();
 }
 
 animate()
+
+//TODO
+// 1. 각 element 에 클릭이벤트
+// 2. round state 구현.
+// 3.

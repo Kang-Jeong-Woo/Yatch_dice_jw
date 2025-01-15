@@ -87,7 +87,7 @@ export class Dice {
         if (body.isSleeping()) {
             if (!this.isSleep) {
                 this.isSleep = true;
-                this.setOriginalPosition();
+                // this.setOriginalPosition();
             }
         }
     }

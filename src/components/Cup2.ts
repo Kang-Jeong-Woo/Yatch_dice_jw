@@ -153,7 +153,7 @@ export class Cup2 implements CupObject{
     //     animate();
     // }
 
-    public pour(duration: number, targetTiltAngle: number) {
+    public pour(duration: number, targetTiltAngle: number, onComplete?: ()=> void) {
         if (this.isPouring || !this.mesh || !this.body) return;
 
         this.isPouring = true;
@@ -181,6 +181,7 @@ export class Cup2 implements CupObject{
 
                 if (progress >= 1) {
                     this.isPouring = false;
+                    if(onComplete) onComplete();
                     return;
                 }
 
