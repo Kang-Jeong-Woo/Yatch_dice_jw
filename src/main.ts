@@ -194,8 +194,11 @@ physicsFolder.add(world.gravity, 'x', -10.0, 10.0, 0.1)
 physicsFolder.add(world.gravity, 'y', -10.0, 10.0, 0.1)
 physicsFolder.add(world.gravity, 'z', -10.0, 10.0, 0.1)
 
-// 라운드 시작
-const roundStart = () => {
+// 한 턴
+let turn = 0;
+
+// 턴 시작
+const turnStart = () => {
     gameFlag = false
     for (const dice of diceArray) {
         let i = 0;
@@ -211,21 +214,34 @@ const roundStart = () => {
     }
 }
 
+const nextTurn = () => {
+    turn++;
+    if (turnText) {
+        turnText.textContent = `(${turn}/12)`;
+    }
+}
+
+const turnText = document.getElementById("turn") as HTMLSpanElement;
 // HTML에서 라운드 시작 버튼 가져오기
-const roundStartBtn = document.querySelector('#round-start') as HTMLButtonElement;
-roundStartBtn.addEventListener('click', (e) => {roundStart()})
+const roundStartBtn = document.getElementById('round-start') as HTMLButtonElement;
+const totalScoreText = document.getElementById('total-score') as HTMLButtonElement;
+roundStartBtn.addEventListener('click', (e) => {turnStart()})
 
 // 버튼 이벤트 리스너
 // shakeButton.addEventListener('click', cup.pour(clock.getDelta(), 1000));
 
+// 주사위 라운드
 let round = 0;
 
 // 게임 시작
 document.addEventListener('keydown', (event) => {
-    if (event.code === 'Space' && !gameFlag) {
+    if (event.code === 'Space' && !gameFlag && round < 3 && turn < 12) {
         gameFlag = true;
         cup.pour(5000, Math.PI / 2, () => gameFlag = true);
         round++;
+        if (roundStartBtn) {
+            roundStartBtn.textContent = `라운드 시작 (${round}/3)`;
+        }
     }
 });
 
@@ -336,8 +352,6 @@ function scoreUpdate() {
     // 현재 선택된 주사위들의 값을 배열로 변환
     const selectedValues = Array.from(scoreMap.values());
 
-    if (selectedValues.length === 0) return;
-
     // 가능한 점수 조합 계산
     const possibleScores = {
         ones: selectedValues.filter(v => v === 1).reduce((a, b) => a + b, 0),
@@ -367,24 +381,68 @@ function scoreUpdate() {
             const unique = [...new Set(selectedValues)].sort();
             return unique.length === 5 && unique[4] - unique[0] === 4 ? 40 : 0;
         })(),
-        yacht: selectedValues.every(v => selectedValues.length === 6 && v === selectedValues[0]) ? 50 : 0
+        yacht: (selectedValues.length >= 5 && selectedValues.every(v => v === selectedValues[0])) ? 50 : 0,
     };
 
     // HTML 요소 업데이트 및 하이라이트 효과
     Object.entries(possibleScores).forEach(([scoreType, score]) => {
-        console.log("scoreType: ", scoreType,", score: ", score)
         const element = document.getElementById(`${scoreType}`);
-        if (element && score > 0) {
+        if (element && element.classList.contains("available")) {
             element.textContent = score.toString();
-            element.classList.add('possible-score');
+            if (score > 0) {
+                element.classList.add('possible-score');
+            }
+            if (score <= 0) {
+                element.classList.remove('possible-score');
+            }
         }
-        // if (element && score > 0) {
-        //     // 이미 점수가 기록되지 않은 칸에만 표시
-        //     if (!element.classList.contains('scored')) {
-        //         element.textContent = score.toString();
-        //         element.classList.add('possible-score');
-        //     }
-        // }
+    });
+}
+
+// 4. span 에 score 를 모두 찾아서 중간에 클릭하면 해당 값을 제외한 나머지 'available' 하지 않은 score 는 점수를 초기화 하고 라운드를 0 으로  =>
+const elementsByClassName = document.getElementsByClassName("score");
+
+for (let i = 0; i < elementsByClassName.length; i++) {
+    elementsByClassName[i].addEventListener("dblclick", function () {
+        // 점수 기입
+        this.classList.remove("available");
+        this.classList.remove("possible-score");
+        round = 0;
+        if (roundStartBtn) {
+            roundStartBtn.textContent = `라운드 시작 (${round}/3)`;
+        }
+        gameFlag = false;
+
+        let bonusScore = 0;
+        let totalScore = 0;
+        // 'available' 하지 않은 score 는 점수를 초기화
+        for (let i = 0; i < elementsByClassName.length; i++) {
+            if (elementsByClassName[i].classList.contains("available")) {
+                elementsByClassName[i].textContent = "0";
+                elementsByClassName[i].classList.remove("possible-score");
+            }
+            if (i < 6) {
+                bonusScore += +elementsByClassName[i].textContent!;
+                if (bonusScore >= 63) {
+                    document.getElementById("bonus")!.textContent = "35";
+                }
+            }
+            if (totalScoreText && i <= 12) {
+                totalScore += +elementsByClassName[i].textContent!;
+                totalScoreText.textContent = totalScore+"";
+            }
+        }
+
+        scoreMap.clear();
+
+        // dice 위치 초기화
+        diceArray.map((dice: Dice) => dice.isSelected = false);
+        turnStart()
+        nextTurn();
+
+        if (turn >= 12) {
+            alert(`당신의 점수는 ${totalScore} 입니다.`);
+        }
     });
 }
 
@@ -417,6 +475,18 @@ function animate() {
 animate()
 
 //TODO
-// 1. 각 element 에 클릭이벤트
-// 2. round state 구현.
-// 3.
+// 1. [완] 각 element 에 클릭이벤트 추가하기
+// 2. [완] round state 구현 및 여기저기 넣기
+// 3. [완] yatch 버그
+// 4. [완] span 에 score 를 모두 찾아서 중간에 클릭으로 점수를 넣으면 라운드가 끝나고 =>
+// 4-1. [완] 다음 reset 을 시작, round 를 0 으로 설정.
+// 5. [완] turnStart() 할 때마다 turn++ 총 turn 을 12번 하고 끝나면 무조건 모든 점수를 계산하여 모든 게임 종료.
+// 6. [완] Dice 더블 클릭 할 때 점수판 update => scoreMap 에서 뺄 때 0일 될 때 0 으로 설정해줘야함.
+// 7. [완] turn count 가 이상함
+// 8. 바닥 하얀 바닥으로 바꾸기
+// 9. disign, deploy,
+
+//TODO
+// 0. DB 에 올려두기
+// 0. 배포
+// 고도화. 온라인 게임으로 전환

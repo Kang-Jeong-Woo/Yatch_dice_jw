@@ -63,6 +63,20 @@ body, html {
   color: #444;
 }
 
+span .small-description {
+  font-size: smaller;
+  font-style: italic;
+  color: #555555;
+  padding-left: 10px;
+}
+
+.small-description {
+  font-size: smaller;
+  font-style: italic;
+  color: #555555;
+  padding-left: 10px;
+}
+
 /* 게임 화면 */
 .game-area {
   display: flex;
