@@ -3,11 +3,27 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Yahtzee Game</title>
+    <title>Yahtzee Dice</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
     <link rel="stylesheet" href="/styles/style.css"/>
 </head>
 <body>
+<div id="spinner"></div>
+<div id="instructions" style="display: none">
+    <h1>Yahtzee Dice</h1>
+    <h2>made by JW</h2>
+    <p>Get to the end and be the best</p>
+    <kbd>W</kbd>&nbsp;<kbd>A</kbd>&nbsp;<kbd>S</kbd>&nbsp;<kbd>D</kbd> to move
+    <br/>
+    <kbd>SPACE</kbd> to jump.
+    <br/>
+    <br/>
+    <button id="startButton">Click To Play</button>
+</div>
+<div id="final-score-wrapper" style="display: none">
+    <span>ur score is <span id="final-score"> 0 </span>. splendid!</span>
+    <a href="#">Play again</a>
+</div>
 <div class="container">
     <!-- 점수판 -->
     <aside class="scoreboard">
@@ -23,23 +39,23 @@
             <span><i class="fa-solid fa-dice-one"></i> Ones</span>
             <span class="score available" id="ones">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-dice-two"></i> Twos</span>
             <span class="score available" id="twos">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-dice-three"></i> Threes</span>
             <span class="score available" id="threes">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-dice-four"></i> Fours</span>
             <span class="score available" id="fours">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-dice-five"></i> Fives</span>
             <span class="score available" id="fives">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-dice-six"></i> Sixes</span>
             <span class="score available" id="sixes">0</span>
         </div>
@@ -48,28 +64,28 @@
             <span class="score" id="bonus">0</span>
         </div>
         <hr/>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-dice"></i>Choice</span>
             <span class="score available" id="chance">0</span>
         </div>
         <hr/>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-table-cells-large"></i>4 of a Kind</span>
             <span class="score available" id="fourOfAKind">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-vihara"></i>Full House</span>
             <span class="score available" id="fullHouse">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-play"></i>S.Straight</span>
             <span class="score available" id="smallStraight">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-forward"></i>L.Straight</span>
             <span class="score available" id="largeStraight">0</span>
         </div>
-        <div class="score-row" >
+        <div class="score-row">
             <span><i class="fa-solid fa-anchor"></i>Yacht</span>
             <span class="score available" id="yacht">0</span>
         </div>
