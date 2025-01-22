@@ -39,16 +39,16 @@ export default class Dice {
             RAPIER.RigidBodyDesc.dynamic()
                 .setTranslation(position.x, position.y, position.z)
                 .setCanSleep(true)
-                .setLinearDamping(0.9)
-                .setAngularDamping(0.9)
-                .setGravityScale(1.2)
+                .setLinearDamping(1.4)
+                .setAngularDamping(1.4)
+                .setGravityScale(1.0)
         );
 
         const points = new Float32Array(diceMesh.geometry.attributes.position.array);
         const diceShape = (RAPIER.ColliderDesc.convexHull(points) as RAPIER.ColliderDesc)
             .setMass(1)
-            .setRestitution(1.5)
-            .setFriction(1);
+            .setRestitution(1.9)
+            .setFriction(0.8);
 
         world.createCollider(diceShape, diceBody);
 

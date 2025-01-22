@@ -8,6 +8,7 @@ import Wall from "../UI/Wall.ts";
 import Background from "../UI/Background.ts";
 import UI from "../UI/UI.ts";
 import RapierDebugRenderer from "../components/debugger/RapierDebugRenderer.ts";
+import DiceHolder from "../components/DiceHolder.ts";
 
 export default class Game {
     scene: Scene
@@ -24,7 +25,7 @@ export default class Game {
         this.scene = scene
         this.camera = camera
         this.renderer = renderer
-        this.ui = new UI(this.renderer)
+        this.ui = new UI(this.renderer, this.camera)
     }
 
     async init() {
@@ -32,10 +33,12 @@ export default class Game {
         const gravity = new Vector3(0.0, -9.81, 0.0)
         this.world = new World(gravity)
 
+        this.ui.init();
+
         this.eventQueue = new EventQueue(true)
 
-        // this.rapierDebugRenderer = new RapierDebugRenderer(this.scene, this.world)
-        // this.rapierDebugRenderer.enabled = true
+        this.rapierDebugRenderer = new RapierDebugRenderer(this.scene, this.world)
+        this.rapierDebugRenderer.enabled = true
 
         // rule
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
@@ -56,6 +59,8 @@ export default class Game {
 
         const board = new GameBoard(this.scene, this.world, {width: 30, height: 7, depth: 30}, {x: 0, y: -1, z: 0});
         await board.init();
+
+        new DiceHolder(this.scene, this.world, [-10, 0.001, -20], 3);
 
         const floorWidth = 30;  // 바닥 가로 길이
         const floorHeight = 1;  // 바닥 높이

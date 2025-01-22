@@ -1,9 +1,10 @@
 # Yatch Dice Game
 
-침착맨이 한 야추 게임입니다. <br>
-다른 게임들은 클릭을 하면 `random()` 함수로 반환되는 값에 주사위만 쓰운 값 같아서 마음에 들지 않았습니다. <br>
-그래서 평소 배우고 싶었던 <img src="https://img.shields.io/badge/three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white"/> 를 사용하여 만들어보았습니다. <br>
-이제는 실제 Dice 가 던져지는 느낌을 받을 수 있는 [야추 다이스 by.JW](https://yatch-dice.kangjeongwoo.com/) 에서 야추 다이스를 즐기세요!
+The game played by 침착맨!<br>
+I didn't enjoy other Yatch-game in web.<br> 
+Cuz It seemes to just overlay a dice on the values returned by the `random()` fn when I was clicked.<br>
+So I make it using <img src="https://img.shields.io/badge/three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white"/> Which I want to learn.<br>
+Now U can play Yatch Dice at [야추 다이스 by.JW](https://yatch-dice.kangjeongwoo.com/), Where u can feel the real dice being thrown!<br>
 
 ---
 
@@ -40,12 +41,12 @@
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/yahtzee-game.git
+   git clone https://github.com/Kang-Jeong-Woo/Yatch_dice_jw
    ```
 
 2. Navigate to the project directory:
    ```bash
-   cd yahtzee-game
+   cd Yatch_dice_jw
    ```
 
 3. Install dependencies:
@@ -60,7 +61,7 @@
 
 5. Open your browser and visit:
    ```
-   http://localhost:3000
+   http://localhost:5173
    ```
 
 ---
@@ -103,7 +104,4 @@ styles/           # CSS and stylesheets
 ---
 
 ## Future Enhancements
-
-- fix bugs
-- Responsive UI
 - Multiplayer mode

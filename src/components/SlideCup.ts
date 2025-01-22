@@ -56,8 +56,8 @@ export default class SlideCup implements ICup{
         // RAPIER 의 ColliderDesc() 를 사용하여 trimesh 강제 생성
         const cupShape = RAPIER.ColliderDesc.trimesh(vertices, indices)
             .setMass(1)
-            .setRestitution(0.1)
-            .setFriction(1.5)
+            .setRestitution(0.3)
+            .setFriction(0.8)
             .setSensor(false);
 
         world.createCollider(cupShape, cupBody);
@@ -109,7 +109,7 @@ export default class SlideCup implements ICup{
                 }
 
                 // 애니메이션의 진행 상황을 부드럽게 조정하기 위해 사용하는 값
-                // 코사인 함수를 사용하여 자연스러운 가속과 감속 효과를 줍니다.
+                // 코사인 함수를 사용하여 자연스러운 가속과 감속 효과를 준다.
                 const easeProgress = -(Math.cos(Math.PI * progress) - 1) / 2;
 
                 // 현재 위치에서 초기 위치로 보간
@@ -157,7 +157,7 @@ export default class SlideCup implements ICup{
             const easeProgress = -(Math.cos(Math.PI * progress) - 1) / 2;
 
             // 상하 값
-            const currentLift = liftHeight * easeProgress * 50;
+            const currentLift = liftHeight * easeProgress * 5;
             const backwardMove = easeProgress * 15;
 
             const newPosition = {

@@ -36,19 +36,28 @@ export default class Rule {
     async init() {
         for (let i = 0; i < 5; i++) {
             const dice = new Dice();
-            await dice.mkDice(i, this.scene, this.world, new Vector3(this.height[0], this.height[1] + i * 2, this.height[2]));
+            await dice.mkDice(i, this.scene, this.world, new Vector3(this.height[0], this.height[1] + 2 + i * 2, this.height[2]));
             this.diceArray.push(dice);
         }
-        await this.cup.mkCup(this.scene, this.world, new Vector3(this.height[0]+7, this.height[1]-20, this.height[2]));
+        await this.cup.mkCup(this.scene, this.world, new Vector3(this.height[0] + 7, this.height[1], this.height[2]));
 
         document.addEventListener('keydown', (event) => {
             if (event.code === 'Space' && !this.gameFlag && this.round < 3 && this.turn < 12) {
                 this.gameFlag = true;
-                this.cup.pour(4000, Math.PI/2, () => this.gameFlag = true);
+                this.cup.pour(4000, Math.PI / 2, () => this.gameFlag = true);
                 this.round++;
                 this.ui.setRoundText(this.round);
             }
         });
+
+        this.ui.mobileBtn.addEventListener('click', (_) => {
+            if (!this.gameFlag && this.round < 3 && this.turn < 12) {
+                this.gameFlag = true;
+                this.cup.pour(4000, Math.PI / 2, () => this.gameFlag = true);
+                this.round++;
+                this.ui.setRoundText(this.round);
+            }
+        })
 
         this.renderer.domElement.addEventListener('dblclick', (e) => {
             if (this.gameFlag) {
@@ -71,6 +80,7 @@ export default class Rule {
                     const clickedDice = this.diceArray.find(dice => dice.mesh.uuid === clickedMeshUuid)
 
                     if (clickedDice) {
+                        if (!clickedDice.isSleep) return;
                         if (clickedDice.isSelected) {
                             clickedDice.isSelected = false;
                             this.scoreMap.delete(clickedDice.id);
@@ -78,12 +88,16 @@ export default class Rule {
                             // 원래 위치
                             const rigidBody = clickedDice.rigidBody;
                             rigidBody.setTranslation(
-                                { x: clickedDice.originalPosition!.x, y: clickedDice.originalPosition!.y, z: clickedDice.originalPosition!.z },
+                                {
+                                    x: clickedDice.originalPosition!.x,
+                                    y: clickedDice.originalPosition!.y,
+                                    z: clickedDice.originalPosition!.z
+                                },
                                 true
                             );
                             // 움직임 멈추기
-                            rigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
-                            rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                            rigidBody.setLinvel({x: 0, y: 0, z: 0}, true);
+                            rigidBody.setAngvel({x: 0, y: 0, z: 0}, true);
 
                             // 남아있는 주사위들의 위치 재정렬
                             Array.from(this.scoreMap.keys()).forEach((id, index) => {
@@ -92,11 +106,11 @@ export default class Rule {
                                     const newPosition = getSelectedDicePosition(index);
                                     const diceRigidBody = dice.rigidBody;
                                     diceRigidBody.setTranslation(
-                                        { x: newPosition.x, y: newPosition.y, z: newPosition.z },
+                                        {x: newPosition.x, y: newPosition.y, z: newPosition.z},
                                         true
                                     );
-                                    diceRigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
-                                    diceRigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                                    diceRigidBody.setLinvel({x: 0, y: 0, z: 0}, true);
+                                    diceRigidBody.setAngvel({x: 0, y: 0, z: 0}, true);
                                 }
                             });
                         } else {
@@ -106,18 +120,18 @@ export default class Rule {
                             clickedDice.isSelected = true;
 
                             // 선택된 주사위의 현재 index
-                            const targetPosition = getSelectedDicePosition(this.scoreMap.size);
+                            const targetPosition = getSelectedDicePosition(this.scoreMap.size - 1);
                             clickedDice.setOriginalPosition();
 
                             // 주사위 물리 바디 위치 업데이트
                             const rigidBody = clickedDice.rigidBody;
                             rigidBody.setTranslation(
-                                { x: targetPosition.x, y: targetPosition.y, z: targetPosition.z },
+                                {x: targetPosition.x, y: targetPosition.y, z: targetPosition.z},
                                 true
                             );
                             // 움직임 멈추기
-                            rigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
-                            rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                            rigidBody.setLinvel({x: 0, y: 0, z: 0}, true);
+                            rigidBody.setAngvel({x: 0, y: 0, z: 0}, true);
                         }
                     }
                 }
@@ -129,7 +143,7 @@ export default class Rule {
 
         for (let i = 0; i < elementsByClassName.length; i++) {
             const element = elementsByClassName[i];
-            element.addEventListener("dblclick", function(this: HTMLElement) {
+            element.addEventListener("dblclick", function (this: HTMLElement) {
                 // 점수 기입
                 this.classList.remove("available");
                 this.classList.remove("possible-score");
@@ -214,7 +228,7 @@ export default class Rule {
             fives: selectedValues.filter(v => v === 5).reduce((a, b) => a + b, 0),
             sixes: selectedValues.filter(v => v === 6).reduce((a, b) => a + b, 0),
             chance: calculateSum(selectedValues),
-            fourOfAKind: Array.from({ length: 6 }, (_, i) => i + 1)
+            fourOfAKind: Array.from({length: 6}, (_, i) => i + 1)
                 .some(num => countNumbers(selectedValues, num) >= 4) ? calculateSum(selectedValues) : 0,
             fullHouse: (() => {
                 const counts = new Map<number, number>();
@@ -259,6 +273,7 @@ export default class Rule {
         this.cup.update();
         this.scoreUpdate();
     }
+
     // 여기서 특정 조건이 완성되면 alert 함수 대신 아래 코드 실행.
     // this.ui.showLevelCompleted()
 }

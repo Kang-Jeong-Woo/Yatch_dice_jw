@@ -3,27 +3,38 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Yahtzee Dice</title>
+    <title>Yatch Dice</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
     <link rel="stylesheet" href="/styles/style.css"/>
 </head>
 <body>
 <div id="spinner"></div>
 <div id="instructions" style="display: none">
-    <h1>Yahtzee Dice</h1>
-    <h2>made by JW</h2>
-    <p>Get to the end and be the best</p>
-    <kbd>W</kbd>&nbsp;<kbd>A</kbd>&nbsp;<kbd>S</kbd>&nbsp;<kbd>D</kbd> to move
-    <br/>
-    <kbd>SPACE</kbd> to jump.
-    <br/>
-    <br/>
+    <h1 style="font-size: smaller">Yatch Dice</h1>
+    <p class="how2play">
+        1. Start the Game:
+        Press the <kbd>SPACE</kbd> to roll all five dice. <br>
+        <br>
+        2. Select Dice:
+        <kbd>Double-click</kbd> on dice to select or deselect them.
+        Selected dice will move to a designated area.<br>
+        <br>
+        3. Score Points:
+        After selecting dice, <kbd>Double-click</kbd> the scoreboard for valid scoring options.
+        Points will be automatically calculated and updated.<br>
+        <br>
+        4. End the Round:
+        After all five dice are selected and scored, press <kbd>SPACE</kbd> to roll again.<br>
+        <br>
+        5. Win the Game:
+        Keep rolling and scoring until all categories on the scoreboard are filled. The player with the highest score wins!<br>
+    </p>
     <button id="startButton">Click To Play</button>
 </div>
 <div id="final-score-wrapper" style="display: none">
-    <span>ur score is <span id="final-score"> 0 </span>. splendid!</span>
-    <a href="#">Play again</a>
+    <div>ur score is <span id="final-score"> 0 </span>. <br> splendid! <br> <a href="#">Play again</a></div>
 </div>
+<span class="throw hide" id="roll"><i class="fa-solid fa-play"></i></span>
 <div class="container">
     <!-- 점수판 -->
     <aside class="scoreboard">
@@ -96,7 +107,7 @@
             <span class="score" id="total-score">0</span>
         </div>
         <div class="score-row" style="justify-content: center">
-            <button type="button" class="error" id="round-start">라운드 시작 (0/3)</button>
+            <button type="button" class="error" id="round-start">Round (0/3)</button>
         </div>
     </aside>
     <!-- 게임 화면 -->
