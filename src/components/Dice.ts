@@ -25,7 +25,7 @@ export default class Dice {
         const objLoader = new OBJLoader();
         const mtlLoader = new MTLLoader();
 
-        const materials = await mtlLoader.loadAsync('img/Dice.mtl');
+        const materials = await mtlLoader.loadAsync('img/components/Dice.mtl');
         materials.preload();
         objLoader.setMaterials(materials);
 
@@ -34,20 +34,21 @@ export default class Dice {
 
         const diceMesh = object.getObjectByName("g_Dice_Roundcube.001") as THREE.Mesh;
         diceMesh.castShadow = true;
+        diceMesh.receiveShadow = true;
 
         const diceBody = world.createRigidBody(
             RAPIER.RigidBodyDesc.dynamic()
                 .setTranslation(position.x, position.y, position.z)
                 .setCanSleep(true)
-                .setLinearDamping(1.4)
-                .setAngularDamping(1.4)
+                .setLinearDamping(1.75)
+                .setAngularDamping(1.75)
                 .setGravityScale(1.0)
         );
 
         const points = new Float32Array(diceMesh.geometry.attributes.position.array);
         const diceShape = (RAPIER.ColliderDesc.convexHull(points) as RAPIER.ColliderDesc)
             .setMass(1)
-            .setRestitution(1.9)
+            .setRestitution(1.8)
             .setFriction(0.8);
 
         world.createCollider(diceShape, diceBody);

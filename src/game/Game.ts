@@ -30,7 +30,7 @@ export default class Game {
 
     async init() {
         await RAPIER.init()
-        const gravity = new Vector3(0.0, -9.81, 0.0)
+        const gravity = new Vector3(0.0, -15, 0.0)
         this.world = new World(gravity)
 
         this.ui.init();
@@ -51,7 +51,7 @@ export default class Game {
 
         // 게임장 생성
         const background = new Background({
-            width: 200, height: 1, depth: 200
+            width: 500, height: 1, depth: 500
         }, {
             x: 0, y: -2.01, z: 0
         });

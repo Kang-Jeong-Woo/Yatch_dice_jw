@@ -13,7 +13,7 @@ export default class WoodenCup implements ICup {
         const objLoader = new OBJLoader();
         const mtlLoader = new MTLLoader();
 
-        const materials = await mtlLoader.loadAsync('img/WoodenMug.mtl');
+        const materials = await mtlLoader.loadAsync('img/components/WoodenMug.mtl');
         materials.preload();
         objLoader.setMaterials(materials);
 

@@ -14,7 +14,7 @@ export default class Rule {
     keyboard: Keyboard
     ui: UI
     gameFlag: boolean = false
-    height: [number, number, number] = [0, 40, 0]
+    height: [number, number, number] = [0, 30, 0]
     diceArray: Array<Dice> = []
     cup: SlideCup = new SlideCup()
     turn: number = 0
@@ -44,7 +44,7 @@ export default class Rule {
         document.addEventListener('keydown', (event) => {
             if (event.code === 'Space' && !this.gameFlag && this.round < 3 && this.turn < 12) {
                 this.gameFlag = true;
-                this.cup.pour(4000, Math.PI / 2, () => this.gameFlag = true);
+                this.cup.pour(1000, Math.PI / 2, () => this.gameFlag = true);
                 this.round++;
                 this.ui.setRoundText(this.round);
             }
@@ -53,7 +53,7 @@ export default class Rule {
         this.ui.mobileBtn.addEventListener('click', (_) => {
             if (!this.gameFlag && this.round < 3 && this.turn < 12) {
                 this.gameFlag = true;
-                this.cup.pour(4000, Math.PI / 2, () => this.gameFlag = true);
+                this.cup.pour(1000, Math.PI / 2, () => this.gameFlag = true);
                 this.round++;
                 this.ui.setRoundText(this.round);
             }
